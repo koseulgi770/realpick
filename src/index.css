@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 50% 97%;
+    --foreground: 20 25% 15%;
+
+    --card: 30 40% 99%;
+    --card-foreground: 20 25% 15%;
+
+    --popover: 30 40% 99%;
+    --popover-foreground: 20 25% 15%;
+
+    --primary: 12 76% 62%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 45% 93%;
+    --secondary-foreground: 20 25% 25%;
+
+    --muted: 30 30% 94%;
+    --muted-foreground: 20 10% 50%;
+
+    --accent: 150 35% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 25% 88%;
+    --input: 30 25% 88%;
+    --ring: 12 76% 62%;
+
+    --radius: 0.75rem;
+
+    --peach: 20 80% 92%;
+    --coral-light: 12 76% 72%;
+    --sage: 150 25% 75%;
+    --warm-gray: 30 10% 60%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+}
+
+@layer components {
+  .step-indicator-active {
+    @apply bg-primary text-primary-foreground;
+  }
+  .step-indicator-done {
+    @apply bg-accent text-accent-foreground;
+  }
+  .step-indicator-pending {
+    @apply bg-muted text-muted-foreground;
+  }
+  .benefit-card {
+    @apply bg-card rounded-xl border border-border p-5 shadow-sm transition-all hover:shadow-md;
+  }
+  .section-title {
+    @apply text-xl font-bold text-foreground mb-3;
+  }
+  .input-option {
+    @apply border-2 border-border rounded-xl p-4 cursor-pointer transition-all hover:border-primary/50;
+  }
+  .input-option-selected {
+    @apply border-primary bg-primary/5;
+  }
+}
