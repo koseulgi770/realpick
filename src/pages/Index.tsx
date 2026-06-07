@@ -289,6 +289,7 @@ const Index = () => {
             benefits={results.benefits}
             totalEstimate={results.totalEstimate}
             onReset={handleReset}
+            region={input.region}
           />
         )}
       </div>
