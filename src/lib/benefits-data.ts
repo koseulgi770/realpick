@@ -20,17 +20,17 @@ export interface Benefit {
   howToApply: string;
 }
 
-// 지자체별 출산장려금 (주요 지역)
-const regionalBonuses: Record<string, { name: string; amounts: number[] }> = {
-  '서울': { name: '서울시 출산축하금', amounts: [1000000, 1500000, 2000000] },
-  '부산': { name: '부산시 출산장려금', amounts: [1000000, 2000000, 3000000] },
+// 지자체별 출산장려금 (2026년 기준)
+const regionalBonuses: Record<string, { name: string; amounts: number[]; notes?: string }> = {
+  '서울': { name: '서울시 출산축하금', amounts: [1000000, 1500000, 2000000], notes: '자치구별 추가 지원 있음 (강남구 첫째 200만원 등)' },
+  '부산': { name: '부산시 출산장려금', amounts: [0, 500000, 1500000], notes: '둘째 50만원(2회분할), 셋째이후 150만원(12회분할). 구별 추가 지원 있음' },
   '대구': { name: '대구시 출산장려금', amounts: [500000, 1000000, 2000000] },
-  '인천': { name: '인천시 출산장려금', amounts: [1000000, 1500000, 2000000] },
-  '광주': { name: '광주시 출산장려금', amounts: [500000, 1000000, 2000000] },
+  '인천': { name: '인천시 출산장려금', amounts: [1000000, 1500000, 2000000], notes: '구별 산전·산후 서비스 바우처 추가 지원' },
+  '광주': { name: '광주시 출산장려금', amounts: [500000, 1000000, 2000000], notes: '자치구별 추가 지원 상이, 보건소 확인 필요' },
   '대전': { name: '대전시 출산장려금', amounts: [500000, 1000000, 1500000] },
   '울산': { name: '울산시 출산장려금', amounts: [1000000, 2000000, 3000000] },
   '세종': { name: '세종시 출산장려금', amounts: [1000000, 2000000, 5000000] },
-  '경기': { name: '경기도 출산장려금', amounts: [500000, 1000000, 2000000] },
+  '경기': { name: '경기도 출산장려금', amounts: [500000, 1000000, 2000000], notes: '시군별 자체 지원 상이. 양평군 첫째 500만원 등 지역차 큼' },
   '강원': { name: '강원도 출산장려금', amounts: [1000000, 2000000, 3000000] },
   '충북': { name: '충북 출산장려금', amounts: [500000, 1000000, 2000000] },
   '충남': { name: '충남 출산장려금', amounts: [500000, 1500000, 3000000] },
@@ -155,17 +155,17 @@ export function calculateBenefits(input: UserInput): { benefits: Benefit[]; tota
     howToApply: '거주지 보건소 또는 복지로에서 신청',
   });
 
-  // 8. 육아휴직 급여 (직장인만)
+  // 8. 육아휴직 급여 (2026년 개정 기준, 직장인만)
   if (input.employmentType === 'employed') {
-    const childLeaveTotal = 2500000 * 12;
+    const childLeaveTotal = 2500000 * 3 + 2000000 * 3 + 1600000 * 6;
     benefits.push({
       category: '근로 지원',
-      name: '육아휴직 급여',
-      amount: `최대 월 250만원 (12개월 시 ${formatWonRaw(childLeaveTotal)})`,
+      name: '육아휴직 급여 (2026년 개정)',
+      amount: `1~3개월 월 250만원, 4~6개월 월 200만원, 7~12개월 월 160만원`,
       amountValue: childLeaveTotal,
       timing: '육아휴직 기간 중',
-      description: '통상임금의 80% (상한 월 250만원) 최대 1년',
-      howToApply: '고용보험 홈페이지에서 신청',
+      description: '2026년 개정: 1~3개월 통상임금 100%(상한 250만원), 4~6개월 100%(상한 200만원), 7~12개월 80%(상한 160만원)',
+      howToApply: '고용보험 홈페이지(ei.go.kr)에서 신청',
     });
 
     benefits.push({
@@ -245,15 +245,17 @@ export function calculateBenefits(input: UserInput): { benefits: Benefit[]; tota
   if (matchedRegion) {
     const bonus = regionalBonuses[matchedRegion];
     const bonusVal = bonus.amounts[orderIdx];
-    benefits.push({
-      category: '지자체 특화',
-      name: bonus.name,
-      amount: formatWon(bonusVal),
-      amountValue: bonusVal,
-      timing: '출생신고 후',
-      description: `${matchedRegion} 지역 출산장려금 (자녀 순위별 차등)`,
-      howToApply: '주민센터 또는 지자체 복지포털에서 신청',
-    });
+    if (bonusVal > 0) {
+      benefits.push({
+        category: '지자체 특화',
+        name: bonus.name,
+        amount: formatWon(bonusVal),
+        amountValue: bonusVal,
+        timing: '출생신고 후',
+        description: `${matchedRegion} 지역 출산장려금 (자녀 순위별 차등)${bonus.notes ? '. ' + bonus.notes : ''}`,
+        howToApply: '주민센터 또는 지자체 복지포털에서 신청',
+      });
+    }
   }
 
   // 15. 저소득 추가 지원
@@ -269,7 +271,73 @@ export function calculateBenefits(input: UserInput): { benefits: Benefit[]; tota
     });
   }
 
-  // 16. 청년 임산부
+  // 16. 산모·신생아 건강관리 지원 (산후도우미)
+  if (input.incomeLevel !== 'over150') {
+    benefits.push({
+      category: '의료비 지원',
+      name: '산모·신생아 건강관리 지원 (정부지원 산후도우미)',
+      amount: '중위소득 150% 이하 가구 지원 (본인부담금 차등)',
+      amountValue: 1000000,
+      timing: '출산 후',
+      description: '중위소득 150% 이하 출산가정에 산후도우미 파견. 소득에 따라 본인부담금 차등. 단태아 표준형 기준 정부지원금 약 120~170만원 수준',
+      howToApply: '복지로 또는 보건소에서 임신 중 사전 신청 권장',
+    });
+  }
+
+  // 17. 자녀장려금
+  if (input.incomeLevel === 'under50' || input.incomeLevel === 'under100') {
+    benefits.push({
+      category: '현금성 지원',
+      name: '자녀장려금',
+      amount: '자녀 1인당 최대 100만원',
+      amountValue: 1000000,
+      timing: '매년 신청 (5월)',
+      description: '저소득 가구 자녀 양육 지원. 홑벌이·맞벌이 가구 소득 기준에 따라 차등 지급',
+      howToApply: '국세청 홈택스(hometax.go.kr) 또는 세무서에서 신청',
+    });
+  }
+
+  // 18. 다자녀 아동수당 추가 (비수도권/인구감소지역, 2026년 신규)
+  const isNonMetro = ['강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주', '세종'].some(r => input.region.includes(r));
+  if (isNonMetro) {
+    benefits.push({
+      category: '지자체 특화',
+      name: '비수도권 아동수당 추가 지원 (2026년 신규)',
+      amount: '월 10만원 추가 (지역별 상이)',
+      amountValue: 1200000,
+      timing: '출생 후 매월',
+      description: '2026년부터 비수도권·인구감소지역 거주 아동에게 아동수당 추가 지원. 지역별로 금액 상이',
+      howToApply: '주민센터 또는 복지로에서 신청',
+    });
+  }
+
+  // 19. 부산 특화 - 둘째 이상 추가 지원
+  if (input.region.includes('부산') && input.childOrder >= 2) {
+    benefits.push({
+      category: '지자체 특화',
+      name: '부산시 첫만남이용권 추가 지원',
+      amount: '둘째 이상 100만원 추가 (일시금)',
+      amountValue: 1000000,
+      timing: '출생신고 후 3개월 이내 신청',
+      description: '부산시 거주 둘째 이상 출생아에게 첫만남이용권 300만원 외 추가 100만원 현금 지급',
+      howToApply: '읍·면·동 행정복지센터 또는 복지로에서 신청',
+    });
+  }
+
+  // 20. 광주 특화 - 임산부 지원
+  if (input.region.includes('광주')) {
+    benefits.push({
+      category: '지자체 특화',
+      name: '광주시 임산부 건강관리 지원',
+      amount: '자치구별 상이',
+      amountValue: 300000,
+      timing: '임신 확인 후',
+      description: '광주시 각 자치구(동구·서구·남구·북구·광산구)별로 임산부 교통비, 영양제, 검진비 등 추가 지원. 관할 보건소 확인 필요',
+      howToApply: '거주 자치구 보건소 방문 신청',
+    });
+  }
+
+  // 21. 청년 임산부
   if (input.specialConditions.includes('youngParent')) {
     benefits.push({
       category: '현금성 지원',
